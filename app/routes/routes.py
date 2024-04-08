@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Path
 from pydantic import BaseModel
 
 from app.database.connection import startup_db_client
@@ -74,26 +74,33 @@ async def list_students(country: str = Query(None, description="Filter by countr
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/students/{id}", tags=["Students"])
-async def fetch_student(id: str):
+async def get_student(id: str = Path(..., description="The ID of the student previously created")):
     """
     Endpoint to fetch a student by ID.
     """
-    # Connect to MongoDB
-    db = await startup_db_client()
-    student_collection = db.get_collection("students")
-    # Check if the connection to the database was successful
-    if db is None:
-        raise HTTPException(status_code=500, detail="Failed to connect to database")
-
     try:
-        # Retrieve the student from the database by ID
-        student = await student_collection.find_one({"_id": id})
-        if student:
-            return student
-        else:
+        # Connect to MongoDB
+        db = await startup_db_client()
+        student_collection = db.get_collection("students")
+
+        # Find student by ID
+        student = await student_collection.find_one({"_id": ObjectId(id)})
+
+        # If student not found, raise HTTPException with status code 404
+        if not student:
             raise HTTPException(status_code=404, detail="Student not found")
+
+        # Prepare response in the specified format
+        response_data = {
+            "name": student["name"],
+            "age": student["age"],
+            "address": student["address"]
+        }
+
+        return response_data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching student: {e}")
+        logger.error(f"Error fetching student: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.patch("/students/{id}", tags=["Students"])
 async def update_student(id: str, student: Student):
