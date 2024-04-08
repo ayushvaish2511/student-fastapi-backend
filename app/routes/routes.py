@@ -134,23 +134,24 @@ async def update_student(
 
 
 @router.delete("/students/{id}", tags=["Students"])
-async def delete_student(id: str):
+async def delete_student(id: str = Path(..., description="The ID of the student to delete")):
     """
-    Endpoint to delete a student by ID.
+    Endpoint to delete a student based on the provided ID.
     """
-    # Connect to MongoDB
-    db = await startup_db_client()
-    student_collection = db.get_collection("students")
-    # Check if the connection to the database was successful
-    if db is None:
-        raise HTTPException(status_code=500, detail="Failed to connect to database")
-
     try:
-        # Delete the student from the database by ID
-        result = await student_collection.delete_one({"_id": id})
-        if result.deleted_count == 1:
-            return {"message": "Student deleted successfully"}
-        else:
+        # Connect to MongoDB
+        db = await startup_db_client()
+        student_collection = db.get_collection("students")
+
+        # Delete student by ID
+        result = await student_collection.delete_one({"_id": ObjectId(id)})
+
+        # If student not found, raise HTTPException with status code 404
+        if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Student not found")
+
+        return {}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error deleting student: {e}")
+        logger.error(f"Error deleting student: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
