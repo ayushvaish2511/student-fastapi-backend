@@ -1,0 +1,18 @@
+
+# API Server
+fastapi
+uvicorn
+pydantic
+
+# Database
+motor
+dnspython
+pymongo
+
+# Development
+pip-tools
+black
+flake8
+
+
+# pymongo[srv]==3.11 
