@@ -12,10 +12,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-def read_root():
-    return {"message": "Hello World"}
-
 app.include_router(student_router)
 
 if __name__ == "__main__":

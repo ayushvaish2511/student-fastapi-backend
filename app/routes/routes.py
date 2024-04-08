@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.post("/students/", status_code=201, tags=["Students"])
+@router.post("/students/", status_code=201)
 async def create_student(student: Student):
     
     db = await startup_db_client()
@@ -31,7 +31,7 @@ async def create_student(student: Student):
         raise HTTPException(status_code=500, detail=f"Error creating student: {e}")
 
 
-@router.get("/students/", tags=["Students"])
+@router.get("/students/")
 async def list_students(country: str = Query(None, description="Filter by country"),
                         age: int = Query(None, description="Filter by age")):
     """
@@ -57,7 +57,7 @@ async def list_students(country: str = Query(None, description="Filter by countr
         logger.error(f"Error listing students: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@router.get("/students/{id}", tags=["Students"])
+@router.get("/students/{id}")
 async def get_student(id: str = Path(..., description="The ID of the student previously created")):
     """
     Endpoint to fetch a student by ID.
@@ -82,7 +82,7 @@ async def get_student(id: str = Path(..., description="The ID of the student pre
         logger.error(f"Error fetching student: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@router.patch("/students/{id}", tags=["Students"])
+@router.patch("/students/{id}")
 async def update_student(
     student_update: Student,
     id: str = Path(..., description="The ID of the student to update")
@@ -109,7 +109,7 @@ async def update_student(
 
 
 
-@router.delete("/students/{id}", tags=["Students"])
+@router.delete("/students/{id}")
 async def delete_student(id: str = Path(..., description="The ID of the student to delete")):
     """
     Endpoint to delete a student based on the provided ID.
