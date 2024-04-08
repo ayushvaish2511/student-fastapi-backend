@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query, Path
+from fastapi import APIRouter, HTTPException, Query, Path, status, Response
 from pydantic import BaseModel
 
 from app.database.connection import startup_db_client
@@ -103,26 +103,35 @@ async def get_student(id: str = Path(..., description="The ID of the student pre
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.patch("/students/{id}", tags=["Students"])
-async def update_student(id: str, student: Student):
+async def update_student(
+    student_update: Student,
+    id: str = Path(..., description="The ID of the student to update")
+):
     """
-    Endpoint to update a student by ID.
+    Endpoint to update a student's properties based on information provided.
     """
-    # Connect to MongoDB
-    db = await startup_db_client()
-    student_collection = db.get_collection("students")
-    # Check if the connection to the database was successful
-    if db is None:
-        raise HTTPException(status_code=500, detail="Failed to connect to database")
-
     try:
-        # Update the student in the database by ID
-        result = await student_collection.update_one({"_id": id}, {"$set": student.dict()})
-        if result.modified_count == 1:
-            return {"message": "Student updated successfully"}
-        else:
+        # Connect to MongoDB
+        db = await startup_db_client()
+        student_collection = db.get_collection("students")
+
+        # Find student by ID
+        student = await student_collection.find_one({"_id": ObjectId(id)})
+
+        # If student not found, raise HTTPException with status code 404
+        if not student:
             raise HTTPException(status_code=404, detail="Student not found")
+
+        # Update student fields with the provided data
+        update_data = {k: v for k, v in student_update.dict().items() if v is not None}
+        await student_collection.update_one({"_id": ObjectId(id)}, {"$set": update_data})
+
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error updating student: {e}")
+        logger.error(f"Error updating student: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
 
 @router.delete("/students/{id}", tags=["Students"])
 async def delete_student(id: str):
