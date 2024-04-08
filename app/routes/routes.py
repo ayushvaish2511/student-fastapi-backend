@@ -3,12 +3,9 @@ from pydantic import BaseModel
 
 from app.database.connection import startup_db_client
 from app.models.Student import Student
-# from database.connection import startup_db_client
-# from models.Student import Student, Address
-# from database.connection import startup_db_client
 import logging
 from fastapi.encoders import jsonable_encoder
-from bson import ObjectId  # Import ObjectId from bson
+from bson import ObjectId  
 
 logger = logging.getLogger(__name__)
 
@@ -16,26 +13,17 @@ router = APIRouter()
 
 @router.post("/students/", status_code=201, tags=["Students"])
 async def create_student(student: Student):
-    """
-    Endpoint to create a student in the system.
-    """
-    # Connect to MongoDB
+    
     db = await startup_db_client()
 
-    # if db is not None:
-    #     print('yess')
-    #     print(db)
+    
     student_collection = db.get_collection("students")
-    # print(student_collection)
-    # Check if the connection to the database was successful
     if db is None:
         raise HTTPException(status_code=500, detail="Failed to connect to database")
 
     try:
-        # Insert the student data into the database
         result = await student_collection.insert_one(student.dict())
         if result.inserted_id:
-            # Return the ID of the newly created student record
             return {"id": str(result.inserted_id)}
         else:
             raise HTTPException(status_code=500, detail="Failed to create student")
@@ -50,22 +38,18 @@ async def list_students(country: str = Query(None, description="Filter by countr
     Endpoint to list students with optional filters.
     """
     try:
-        # Connect to MongoDB
         db = await startup_db_client()
         student_collection = db.get_collection("students")
 
-        # Construct filter based on query parameters
         filter_params = {}
         if country:
             filter_params["country"] = country
         if age is not None:
             filter_params["age"] = {"$gte": age}
 
-        # Retrieve students based on filter
         students_cursor = student_collection.find(filter_params)
         students = await students_cursor.to_list(None)
 
-        # Convert MongoDB documents to dictionaries and exclude _id and address fields
         students_data = [{"name": student["name"], "age": student["age"]} for student in students]
 
         return {"data": students_data}
@@ -79,18 +63,14 @@ async def get_student(id: str = Path(..., description="The ID of the student pre
     Endpoint to fetch a student by ID.
     """
     try:
-        # Connect to MongoDB
         db = await startup_db_client()
         student_collection = db.get_collection("students")
 
-        # Find student by ID
         student = await student_collection.find_one({"_id": ObjectId(id)})
 
-        # If student not found, raise HTTPException with status code 404
         if not student:
             raise HTTPException(status_code=404, detail="Student not found")
 
-        # Prepare response in the specified format
         response_data = {
             "name": student["name"],
             "age": student["age"],
@@ -111,18 +91,14 @@ async def update_student(
     Endpoint to update a student's properties based on information provided.
     """
     try:
-        # Connect to MongoDB
         db = await startup_db_client()
         student_collection = db.get_collection("students")
 
-        # Find student by ID
         student = await student_collection.find_one({"_id": ObjectId(id)})
 
-        # If student not found, raise HTTPException with status code 404
         if not student:
             raise HTTPException(status_code=404, detail="Student not found")
 
-        # Update student fields with the provided data
         update_data = {k: v for k, v in student_update.dict().items() if v is not None}
         await student_collection.update_one({"_id": ObjectId(id)}, {"$set": update_data})
 
@@ -139,14 +115,11 @@ async def delete_student(id: str = Path(..., description="The ID of the student 
     Endpoint to delete a student based on the provided ID.
     """
     try:
-        # Connect to MongoDB
         db = await startup_db_client()
         student_collection = db.get_collection("students")
 
-        # Delete student by ID
         result = await student_collection.delete_one({"_id": ObjectId(id)})
 
-        # If student not found, raise HTTPException with status code 404
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Student not found")
 
