@@ -8,6 +8,7 @@ pydantic
 motor
 dnspython
 pymongo
+motor
 
 # Development
 pip-tools

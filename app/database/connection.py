@@ -4,6 +4,12 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 import urllib.parse
 
+
+from bson import ObjectId
+import motor.motor_asyncio
+from pymongo import ReturnDocument
+
+
 async def startup_db_client():
     """
     Connects to MongoDB using an async client and sets up the database connection.
@@ -22,6 +28,11 @@ async def startup_db_client():
 
         print("Successfully connected to MongoDB!")
         return db
+    
+        client = motor.motor_asyncio.AsyncIOMotorClient(os.environ[uri])
+        db = client.studentsDB
+        student_collection = db.get_collection("students")
+
     except Exception as e:
         print(f"Failed to connect to MongoDB: {e}")
         raise  

@@ -18,17 +18,18 @@ async def create_student(student: Student):
     # Connect to MongoDB
     db = await startup_db_client()
 
-    if db is not None:
-        print('yess')
-        print(db)
-    
+    # if db is not None:
+    #     print('yess')
+    #     print(db)
+    student_collection = db.get_collection("students")
+    # print(student_collection)
     # Check if the connection to the database was successful
     if db is None:
         raise HTTPException(status_code=500, detail="Failed to connect to database")
 
     try:
         # Insert the student data into the database
-        result = await db["studentsDB.studentFast"].insert_one(student.dict())
+        result = await student_collection.insert_one(student.dict())
         if result.inserted_id:
             # Return the ID of the newly created student record
             return {"id": str(result.inserted_id)}
@@ -51,7 +52,7 @@ async def list_students():
 
     try:
         # Retrieve all students from the database
-        students = await db["studentsDB.studentFast"].find().to_list(length=None)
+        students = await db["students"].find().to_list(length=None)
         return students
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error listing students: {e}")
